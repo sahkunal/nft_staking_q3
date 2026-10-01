@@ -3,6 +3,7 @@ pub mod constants;
 pub mod error;
 pub mod instructions;
 pub mod state;
+pub mod utils;
 
 use anchor_lang::prelude::*;
 
@@ -17,6 +18,10 @@ pub mod nft_staking_k {
 
     pub fn initialize(ctx: Context<Initialize>, rewards_bps:u16, freeze_period:u16) -> Result<()> {
        initialize::handler(ctx, rewards_bps, freeze_period)
+    }
+
+    pub fn claim_rewards(ctx: Context<ClaimRewards>)->Result<()> {
+        claim_rewards::handler(ctx)
     }
     pub fn create_collection(ctx: Context<CreateCollection>, name: String, uri:String)-> Result<()>{
         create_collections::handler(ctx, name, uri)
