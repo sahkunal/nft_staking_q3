@@ -17,11 +17,6 @@ import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { fetchAsset, fetchCollection } from "@metaplex-foundation/mpl-core";
 import { publicKey as umiPublicKey } from "@metaplex-foundation/umi";
 import { assert } from "chai";
-
-// NOTE: anchor.workspace keys off the program's Cargo.toml package name
-// ("nft_staking_q3" -> NftStakingQ3), not the `#[program] pub mod nft_staking_k`
-// identifier inside lib.rs. If this key doesn't exist after `anchor build`,
-// check `target/types/` for the generated name and adjust here.
 import { NftStakingQ3 } from "../target/types/nft_staking_q3";
 
 const MPL_CORE_PROGRAM_ID = new PublicKey(
@@ -34,11 +29,7 @@ describe("nft_staking_q3", () => {
   const connection = provider.connection;
 
   const program = anchor.workspace.NftStakingQ3 as Program<NftStakingQ3>;
-
-  // Umi client, used read-only, purely to decode mpl-core Attributes/plugin
-  // state in assertions (this program's own instructions do all the writing).
-  const umi = createUmi(connection.rpcEndpoint);
-
+  const umi = createUmi(connection.rpcEndpoint, "confirmed");
   const admin = (provider.wallet as anchor.Wallet).payer;
   const user = Keypair.generate();
 
@@ -382,7 +373,7 @@ describe("nft_staking_q3", () => {
       .catch(() => BigInt(0));
 
     await program.methods
-      .burnStakedNft()
+      .unstake()
       .accounts({
         owner: user.publicKey,
         config,

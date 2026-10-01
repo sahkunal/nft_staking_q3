@@ -13,7 +13,7 @@ pub use state::*;
 declare_id!("CX4TYHcukXuv1kM343nYvSGpprQJVZndj1ktwkUZiffQ");
 
 #[program]
-pub mod nft_staking_k {
+pub mod nft_staking_q3 {
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>, rewards_bps:u16, freeze_period:u16) -> Result<()> {
