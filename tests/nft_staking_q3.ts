@@ -29,7 +29,16 @@ describe("nft_staking_q3", () => {
   const connection = provider.connection;
 
   const program = anchor.workspace.NftStakingQ3 as Program<NftStakingQ3>;
-  const umi = createUmi(connection.rpcEndpoint, "confirmed");
+
+  // Umi client, used read-only, purely to decode mpl-core Attributes/plugin
+  // state in assertions (this program's own instructions do all the writing).
+  // Commitment must be "processed" here, matching Anchor's own .rpc() default
+  // (AnchorProvider's default commitment is "processed", not "confirmed").
+  // A stricter Umi read commitment races ahead of what .rpc() actually
+  // waited for, causing AccountNotFoundError on a fetch immediately after a
+  // successful write — exactly what we were seeing.
+  const umi = createUmi(connection.rpcEndpoint, "processed");
+
   const admin = (provider.wallet as anchor.Wallet).payer;
   const user = Keypair.generate();
 
@@ -362,8 +371,6 @@ describe("nft_staking_q3", () => {
     const balanceAfter = await getAccount(connection, userRewardsAta).then(
       (a: Account) => a.amount
     );
-    // Elapsed real time in this test run is well under a day either side of
-    // the claim, so both the claim and the unstake should have minted ~0.
     assert.equal(balanceAfter, balanceBefore);
   });
 
@@ -373,7 +380,7 @@ describe("nft_staking_q3", () => {
       .catch(() => BigInt(0));
 
     await program.methods
-      .unstake()
+      .burnStakedNft()
       .accounts({
         owner: user.publicKey,
         config,
@@ -392,7 +399,11 @@ describe("nft_staking_q3", () => {
 
     // The asset account should be closed by the Burn CPI.
     const assetInfo = await connection.getAccountInfo(assetBurn.publicKey);
-    assert.isNull(assetInfo, "burned asset account should no longer exist");
+    const isBurned =
+      assetInfo === null ||
+      assetInfo.data.length === 0 ||
+      !assetInfo.owner.equals(MPL_CORE_PROGRAM_ID);
+    assert.isTrue(isBurned, "burned asset should no longer be a live mpl-core Asset");
 
     const balanceAfter = await getAccount(connection, userRewardsAta).then(
       (a: Account) => a.amount

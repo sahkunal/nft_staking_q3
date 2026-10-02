@@ -11,13 +11,16 @@ nft_staking_q3 = "CX4TYHcukXuv1kM343nYvSGpprQJVZndj1ktwkUZiffQ"
 [registry]
 url = "https://api.apr.dev"
 
+[test]
+startup_wait = 30000
+
 [provider]
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [test.validator]
 url = "https://api.mainnet-beta.solana.com"
- 
+
 [[test.validator.clone]]
 address = "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
 

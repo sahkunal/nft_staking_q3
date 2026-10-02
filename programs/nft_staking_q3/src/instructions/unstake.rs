@@ -158,27 +158,23 @@ pub fn handler(ctx: Context<Unstake>) -> Result<()> {
         .plugin(Plugin::FreezeDelegate(FreezeDelegate { frozen: false }))
         .invoke_signed(&[signer_seeds])?;
 
-    // Remove FreezeDelegate and BurnDelegate entirely (must thaw first — a
-    // frozen plugin can't be revoked). Without this, a second `stake` call
-    // on the same (now unstaked) asset would fail, because AddPluginV1
-    // can't add a plugin type that already exists on the asset.
     RemovePluginV1CpiBuilder::new(&ctx.accounts.mpl_core_program.to_account_info())
         .asset(&ctx.accounts.asset.to_account_info())
         .collection(Some(&ctx.accounts.collection.to_account_info()))
         .payer(&ctx.accounts.owner.to_account_info())
-        .authority(Some(&ctx.accounts.update_authority.to_account_info()))
+        .authority(Some(&ctx.accounts.owner.to_account_info()))
         .system_program(&ctx.accounts.system_program.to_account_info())
         .plugin_type(PluginType::FreezeDelegate)
-        .invoke_signed(&[signer_seeds])?;
+        .invoke()?;
 
     RemovePluginV1CpiBuilder::new(&ctx.accounts.mpl_core_program.to_account_info())
         .asset(&ctx.accounts.asset.to_account_info())
         .collection(Some(&ctx.accounts.collection.to_account_info()))
         .payer(&ctx.accounts.owner.to_account_info())
-        .authority(Some(&ctx.accounts.update_authority.to_account_info()))
+        .authority(Some(&ctx.accounts.owner.to_account_info()))
         .system_program(&ctx.accounts.system_program.to_account_info())
         .plugin_type(PluginType::BurnDelegate)
-        .invoke_signed(&[signer_seeds])?;
+        .invoke()?;
 
     let amount: u64 = (unclaimed_days as u64)
         .checked_mul(ctx.accounts.config.rewards_bps as u64)

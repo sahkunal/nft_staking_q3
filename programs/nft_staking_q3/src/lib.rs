@@ -34,5 +34,8 @@ pub mod nft_staking_q3 {
     }
      pub fn unstake(ctx: Context<Unstake>)-> Result<()>{
        unstake::handler(ctx)
-}
+    }
+    pub fn burn_staked_nft(ctx: Context<BurnStakedNft>) -> Result<()> {
+        burn_staked_nft::handler(ctx)
+    }
 }
