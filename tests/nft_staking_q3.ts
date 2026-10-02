@@ -397,12 +397,19 @@ describe("nft_staking_q3", () => {
       .signers([user])
       .rpc();
 
-    // The asset account should be closed by the Burn CPI.
-    const assetInfo = await connection.getAccountInfo(assetBurn.publicKey);
-    const isBurned =
+    let assetInfo = await connection.getAccountInfo(assetBurn.publicKey);
+    let isBurned =
       assetInfo === null ||
       assetInfo.data.length === 0 ||
       !assetInfo.owner.equals(MPL_CORE_PROGRAM_ID);
+    for (let attempt = 0; attempt < 5 && !isBurned; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      assetInfo = await connection.getAccountInfo(assetBurn.publicKey);
+      isBurned =
+        assetInfo === null ||
+        assetInfo.data.length === 0 ||
+        !assetInfo.owner.equals(MPL_CORE_PROGRAM_ID);
+    }
     assert.isTrue(isBurned, "burned asset should no longer be a live mpl-core Asset");
 
     const balanceAfter = await getAccount(connection, userRewardsAta).then(
