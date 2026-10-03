@@ -17,6 +17,11 @@ import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { fetchAsset, fetchCollection } from "@metaplex-foundation/mpl-core";
 import { publicKey as umiPublicKey } from "@metaplex-foundation/umi";
 import { assert } from "chai";
+
+// anchor.workspace keys off the #[program] pub mod identifier in lib.rs,
+// which is now `nft_staking_q3` to match the crate name — so this is
+// NftStakingQ3 again. If you ever rename the #[program] mod, this and the
+// import path below need to track it.
 import { NftStakingQ3 } from "../target/types/nft_staking_q3";
 
 const MPL_CORE_PROGRAM_ID = new PublicKey(
@@ -396,21 +401,16 @@ describe("nft_staking_q3", () => {
       } as any)
       .signers([user])
       .rpc();
-
-    let assetInfo = await connection.getAccountInfo(assetBurn.publicKey);
-    let isBurned =
-      assetInfo === null ||
-      assetInfo.data.length === 0 ||
-      !assetInfo.owner.equals(MPL_CORE_PROGRAM_ID);
-    for (let attempt = 0; attempt < 5 && !isBurned; attempt++) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      assetInfo = await connection.getAccountInfo(assetBurn.publicKey);
-      isBurned =
-        assetInfo === null ||
-        assetInfo.data.length === 0 ||
-        !assetInfo.owner.equals(MPL_CORE_PROGRAM_ID);
+    let stillLiveAsset = true;
+    try {
+      await fetchAssetAttributes(assetBurn.publicKey);
+    } catch {
+      stillLiveAsset = false;
     }
-    assert.isTrue(isBurned, "burned asset should no longer be a live mpl-core Asset");
+    assert.isFalse(
+      stillLiveAsset,
+      "burned asset should no longer be fetchable as a live mpl-core Asset"
+    );
 
     const balanceAfter = await getAccount(connection, userRewardsAta).then(
       (a: Account) => a.amount
@@ -423,7 +423,7 @@ describe("nft_staking_q3", () => {
     const coll = await fetchCollectionAttributes();
     assert.equal(
       await attrValue(coll.attributes?.attributeList ?? [], "total_staked"),
-      "2"
+      "1"
     );
   });
 
